@@ -15,13 +15,21 @@ import { isAuth } from "./isAuth";
 const main = async () => {
   await createConnection({
     type: "postgres",
+    url:
+      "postgres://fjjjeomxcsselo:6e7296aec8294598d9e3461ebb4a77fa89f6510193b6079f5a464f3a10e8908a@ec2-3-211-37-117.compute-1.amazonaws.com:5432/d7gj7kfuqm9hgc",
+    entities: [join(__dirname, "./entities/*.*")],
+    logging: true,
+    synchronize: false,
+  });
+  /*await createConnection({
+    type: "postgres",
     database: "vsfirst",
     username: "sanskaar",
     password: "sanskaar",
     entities: [join(__dirname, "./entities/*.*")],
     logging: !__prod__,
     synchronize: !__prod__,
-  });
+  });*/
   /*const user = await User.create({ name: "bob" }).save();
   console.log({ user });*/
   const app = express();
@@ -137,9 +145,9 @@ const main = async () => {
   app.get("/", (_req, res) => {
     res.send("Hello");
   });
-
-  app.listen(3002, () => {
-    console.log("Listening on port 3002");
+  const PORT = process.env.PORT || 3002;
+  app.listen(PORT, () => {
+    console.log(`Listening on port ${PORT}`);
   });
 };
 
