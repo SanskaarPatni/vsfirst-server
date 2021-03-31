@@ -20,6 +20,7 @@ const main = async () => {
     entities: [join(__dirname, "./entities/*.*")],
     logging: true,
     synchronize: false,
+    ssl: true,
   });
   /*await createConnection({
     type: "postgres",
