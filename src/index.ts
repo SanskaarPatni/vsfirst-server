@@ -15,12 +15,13 @@ import { isAuth } from "./isAuth";
 const main = async () => {
   await createConnection({
     type: "postgres",
-    url:
-      "postgres://fjjjeomxcsselo:6e7296aec8294598d9e3461ebb4a77fa89f6510193b6079f5a464f3a10e8908a@ec2-3-211-37-117.compute-1.amazonaws.com:5432/d7gj7kfuqm9hgc",
+    url: process.env.DATABASE_URL,
     entities: [join(__dirname, "./entities/*.*")],
     logging: true,
     synchronize: false,
     ssl: true,
+  }).then(() => {
+    console.log("Database connected");
   });
   /*await createConnection({
     type: "postgres",
@@ -47,7 +48,7 @@ const main = async () => {
       {
         clientID: process.env.GITHUB_CLIENT_ID,
         clientSecret: process.env.GITHUB_CLIENT_SECRET,
-        callbackURL: "http://localhost:3002/auth/github/callback",
+        callbackURL: "https://vstodo-server.herokuapp.com/auth/github/callback",
       },
       async (_, __, profile, cb) => {
         let user = await User.findOne({ where: { githubId: profile.id } });
@@ -146,6 +147,7 @@ const main = async () => {
   app.get("/", (_req, res) => {
     res.send("Hello");
   });
+
   const PORT = process.env.PORT || 3002;
   app.listen(PORT, () => {
     console.log(`Listening on port ${PORT}`);
