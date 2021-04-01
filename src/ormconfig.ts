@@ -24,4 +24,5 @@ export default {
     entitiesDir: "src/entities",
     migrationsDir: "src/migration",
   },
+  ssl: true,
 } as ConnectionOptions;
