@@ -7,6 +7,7 @@ const isCompiled = path.extname(__filename).includes("js");
 
 export default {
   type: "postgres",
+  url: process.env.DATABASE_URL,
   host: process.env.DB_HOST || "localhost",
   port: process.env.DB_PORT ? parseInt(process.env.DB_PORT) : 5432,
   username: process.env.DB_USERNAME || "sanskaar",
