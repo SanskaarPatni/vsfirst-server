@@ -1,9 +1,8 @@
 import "reflect-metadata";
 require("dotenv-safe").config();
 import express from "express";
-import { createConnection } from "typeorm";
 import { __prod__ } from "./constants";
-import { join } from "path";
+//import { join } from "path";
 import { User } from "./entities/User";
 import { Strategy as GitHubStrategy } from "passport-github";
 import passport from "passport";
@@ -11,9 +10,10 @@ import jwt from "jsonwebtoken";
 import cors from "cors";
 import { Todo } from "./entities/Todo";
 import { isAuth } from "./isAuth";
+import { TryDBConnect } from "./db";
 
 const main = async () => {
-  await createConnection({
+  /*await createConnection({
     type: "postgres",
     url: process.env.DATABASE_URL,
     entities: [join(__dirname, "./entities/*.*")],
@@ -31,7 +31,8 @@ const main = async () => {
     entities: [join(__dirname, "./entities/*.*")],
     logging: !__prod__,
     synchronize: !__prod__,
-  });*/
+  });
+  */
   /*const user = await User.create({ name: "bob" }).save();
   console.log({ user });*/
   const app = express();
@@ -43,12 +44,22 @@ const main = async () => {
   app.use(passport.initialize());
   app.use(express.json());
 
+  app.use(async (_: any, res, next) => {
+    await TryDBConnect(() => {
+      res.json({
+        error: "Database connection error, please try again later",
+      });
+    }, next);
+  });
+
   passport.use(
     new GitHubStrategy(
       {
         clientID: process.env.GITHUB_CLIENT_ID,
         clientSecret: process.env.GITHUB_CLIENT_SECRET,
-        callbackURL: "https://vstodo-server.herokuapp.com/auth/github/callback",
+        callbackURL:
+          "https://vstodo-server.herokuapp.com/auth/github/callback" ||
+          "http://localhost:3002/auth/github/callback",
       },
       async (_, __, profile, cb) => {
         let user = await User.findOne({ where: { githubId: profile.id } });
