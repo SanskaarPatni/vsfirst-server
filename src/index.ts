@@ -2,7 +2,6 @@ import "reflect-metadata";
 require("dotenv-safe").config();
 import express from "express";
 import { __prod__ } from "./constants";
-//import { join } from "path";
 import { User } from "./entities/User";
 import { Strategy as GitHubStrategy } from "passport-github";
 import passport from "passport";
@@ -10,31 +9,22 @@ import jwt from "jsonwebtoken";
 import cors from "cors";
 import { Todo } from "./entities/Todo";
 import { isAuth } from "./isAuth";
-import { TryDBConnect } from "./db";
+import { createConnection, getRepository } from "typeorm";
 
 const main = async () => {
-  /*await createConnection({
+  await createConnection({
     type: "postgres",
     url: process.env.DATABASE_URL,
-    entities: [join(__dirname, "./entities/*.*")],
-    logging: true,
-    synchronize: false,
-    ssl: true,
-  }).then(() => {
-    console.log("Database connected");
-  });
-  /*await createConnection({
-    type: "postgres",
-    database: "vsfirst",
-    username: "sanskaar",
-    password: "sanskaar",
-    entities: [join(__dirname, "./entities/*.*")],
-    logging: !__prod__,
     synchronize: !__prod__,
-  });
-  */
-  /*const user = await User.create({ name: "bob" }).save();
-  console.log({ user });*/
+    entities: ["./entities/**/*.js"],
+    logging: !__prod__,
+  })
+    .then(() => {
+      console.log("Database connected");
+    })
+    .catch((err) => {
+      console.log(err);
+    });
   const app = express();
   passport.serializeUser(function (user: any, done) {
     done(null, user.accessToken);
@@ -43,14 +33,6 @@ const main = async () => {
   app.use(cors({ origin: "*" }));
   app.use(passport.initialize());
   app.use(express.json());
-
-  app.use(async (_: any, res, next) => {
-    await TryDBConnect(() => {
-      res.json({
-        error: "Database connection error, please try again later",
-      });
-    }, next);
-  });
 
   passport.use(
     new GitHubStrategy(
@@ -62,15 +44,20 @@ const main = async () => {
           "http://localhost:3002/auth/github/callback",
       },
       async (_, __, profile, cb) => {
-        let user = await User.findOne({ where: { githubId: profile.id } });
+        const userRepository = getRepository(User);
+        let user = await userRepository.findOne({
+          where: { githubId: profile.id },
+        });
         if (user) {
           user.name = profile.displayName;
           await user.save();
         } else {
-          user = await User.create({
-            name: profile.displayName,
-            githubId: profile.id,
-          }).save();
+          user = await userRepository
+            .create({
+              name: profile.displayName,
+              githubId: profile.id,
+            })
+            .save();
         }
         cb(null, {
           accessToken: jwt.sign(
@@ -105,7 +92,8 @@ const main = async () => {
   });
 
   app.put("/todo", isAuth, async (req: any, res) => {
-    const todo = await Todo.findOne(req.body.id);
+    const todoRepository = getRepository(Todo);
+    const todo = await todoRepository.findOne(req.body.id);
     if (!todo) {
       res.send({ todo: null });
       return;
@@ -119,14 +107,18 @@ const main = async () => {
   });
 
   app.post("/todo", isAuth, async (req: any, res) => {
-    const todo = await Todo.create({
-      text: req.body.text,
-      creatorId: req.userId,
-    }).save();
+    const todoRepository = getRepository(Todo);
+    const todo = await todoRepository
+      .create({
+        text: req.body.text,
+        creatorId: req.userId,
+      })
+      .save();
     res.send({ todo });
   });
 
   app.get("/me", async (req, res) => {
+    const userRepository = getRepository(User);
     // Bearer 120jdklowqjed021901
     const authHeader = req.headers.authorization;
     if (!authHeader) {
@@ -151,7 +143,7 @@ const main = async () => {
       res.send({ user: null });
       return;
     }
-    const user = await User.findOne(userId);
+    const user = await userRepository.findOne(userId);
     res.send({ user });
   });
 
@@ -160,6 +152,7 @@ const main = async () => {
   });
 
   const PORT = process.env.PORT || 3002;
+
   app.listen(PORT, () => {
     console.log(`Listening on port ${PORT}`);
   });
