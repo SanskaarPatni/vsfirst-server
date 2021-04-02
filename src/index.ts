@@ -16,7 +16,7 @@ const main = async () => {
     type: "postgres",
     url: process.env.DATABASE_URL,
     synchronize: !__prod__,
-    entities: ["./entities/**/*.js"],
+    entities: ["__dirname + '/entities/**/*.js"],
     logging: !__prod__,
   })
     .then(() => {
