@@ -2,6 +2,7 @@ import "reflect-metadata";
 require("dotenv-safe").config();
 import express from "express";
 import { __prod__ } from "./constants";
+import { join } from "path";
 import { User } from "./entities/User";
 import { Strategy as GitHubStrategy } from "passport-github";
 import passport from "passport";
@@ -9,14 +10,14 @@ import jwt from "jsonwebtoken";
 import cors from "cors";
 import { Todo } from "./entities/Todo";
 import { isAuth } from "./isAuth";
-import { createConnection, getRepository } from "typeorm";
+import { createConnection } from "typeorm";
 
 const main = async () => {
   await createConnection({
     type: "postgres",
     url: process.env.DATABASE_URL,
     synchronize: !__prod__,
-    entities: ["__dirname + '/entities/**/*.js"],
+    entities: [join(__dirname, "./entities/*.*")],
     logging: !__prod__,
   })
     .then(() => {
@@ -39,25 +40,20 @@ const main = async () => {
       {
         clientID: process.env.GITHUB_CLIENT_ID,
         clientSecret: process.env.GITHUB_CLIENT_SECRET,
-        callbackURL:
-          "https://vstodo-server.herokuapp.com/auth/github/callback" ||
-          "http://localhost:3002/auth/github/callback",
+        callbackURL: "http://localhost:3002/auth/github/callback",
       },
       async (_, __, profile, cb) => {
-        const userRepository = getRepository(User);
-        let user = await userRepository.findOne({
+        let user = await User.findOne({
           where: { githubId: profile.id },
         });
         if (user) {
           user.name = profile.displayName;
           await user.save();
         } else {
-          user = await userRepository
-            .create({
-              name: profile.displayName,
-              githubId: profile.id,
-            })
-            .save();
+          user = await User.create({
+            name: profile.displayName,
+            githubId: profile.id,
+          }).save();
         }
         cb(null, {
           accessToken: jwt.sign(
@@ -91,9 +87,16 @@ const main = async () => {
     res.send({ todos });
   });
 
+  app.post("/todo", isAuth, async (req: any, res) => {
+    const todo = await Todo.create({
+      text: req.body.text,
+      creatorId: req.userId,
+    }).save();
+    res.send({ todo });
+  });
+
   app.put("/todo", isAuth, async (req: any, res) => {
-    const todoRepository = getRepository(Todo);
-    const todo = await todoRepository.findOne(req.body.id);
+    const todo = await Todo.findOne(req.body.id);
     if (!todo) {
       res.send({ todo: null });
       return;
@@ -106,19 +109,20 @@ const main = async () => {
     res.send({ todo });
   });
 
-  app.post("/todo", isAuth, async (req: any, res) => {
-    const todoRepository = getRepository(Todo);
-    const todo = await todoRepository
-      .create({
-        text: req.body.text,
-        creatorId: req.userId,
-      })
-      .save();
+  app.delete("/todo", isAuth, async (req: any, res) => {
+    const todo = await Todo.findOne(req.body.id);
+    if (!todo) {
+      res.send({ todo: null });
+      return;
+    }
+    if (todo.creatorId !== req.userId) {
+      throw new Error("not authorized");
+    }
+    await todo.remove();
     res.send({ todo });
   });
 
   app.get("/me", async (req, res) => {
-    const userRepository = getRepository(User);
     // Bearer 120jdklowqjed021901
     const authHeader = req.headers.authorization;
     if (!authHeader) {
@@ -143,7 +147,7 @@ const main = async () => {
       res.send({ user: null });
       return;
     }
-    const user = await userRepository.findOne(userId);
+    const user = await User.findOne(userId);
     res.send({ user });
   });
 
