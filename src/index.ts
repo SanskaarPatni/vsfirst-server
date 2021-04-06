@@ -14,9 +14,9 @@ import { createConnection } from "typeorm";
 
 const main = async () => {
   await createConnection({
-    //type: "mysql",
-    type: "postgres",
-    url: process.env.DATABASE_URL,
+    type: "mysql",
+    //type: "postgres",
+    url: process.env.CLEARDB_DATABASE_URL,
     synchronize: !__prod__,
     entities: [join(__dirname, "./entities/*.*")],
     logging: !__prod__,
@@ -41,7 +41,9 @@ const main = async () => {
       {
         clientID: process.env.GITHUB_CLIENT_ID,
         clientSecret: process.env.GITHUB_CLIENT_SECRET,
-        callbackURL: "http://localhost:3002/auth/github/callback",
+        //callbackURL: "http://localhost:3002/auth/github/callback",
+        callbackURL:
+          "https://vstodo-mysql-server.herokuapp.com/auth/github/callback",
       },
       async (_, __, profile, cb) => {
         let user = await User.findOne({
@@ -76,7 +78,9 @@ const main = async () => {
     passport.authenticate("github", { session: false }),
     (req: any, res) => {
       // Successful authentication
-      res.redirect(`http://localhost:54321/auth/${req.user.accessToken}`);
+      res.redirect(
+        `https://vstodo-mysql-server.herokuapp.com/auth/${req.user.accessToken}`
+      );
     }
   );
 

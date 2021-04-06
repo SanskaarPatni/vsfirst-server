@@ -14,7 +14,7 @@ export class User extends BaseEntity {
   @Column("text", { nullable: true })
   name: string;
 
-  @Column("text", { unique: true })
+  @Column({ unique: true, length: 100 })
   githubId: string;
 
   @OneToMany(() => Todo, (t) => t.creator)
