@@ -78,9 +78,7 @@ const main = async () => {
     passport.authenticate("github", { session: false }),
     (req: any, res) => {
       // Successful authentication
-      res.redirect(
-        `https://vstodo-mysql-server.herokuapp.com/auth/token/${req.user.accessToken}`
-      );
+      res.redirect(`http://localhost:54321/auth/${req.user.accessToken}`);
     }
   );
 
