@@ -14,6 +14,7 @@ import { createConnection } from "typeorm";
 
 const main = async () => {
   await createConnection({
+    //type: "mysql",
     type: "postgres",
     url: process.env.DATABASE_URL,
     synchronize: !__prod__,
