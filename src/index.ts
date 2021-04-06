@@ -79,7 +79,7 @@ const main = async () => {
     (req: any, res) => {
       // Successful authentication
       res.redirect(
-        `https://vstodo-mysql-server.herokuapp.com/auth/${req.user.accessToken}`
+        `https://vstodo-mysql-server.herokuapp.com/auth/token/${req.user.accessToken}`
       );
     }
   );
